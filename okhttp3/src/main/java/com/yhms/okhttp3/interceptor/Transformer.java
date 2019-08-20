@@ -3,14 +3,8 @@ package com.yhms.okhttp3.interceptor;
 
 import com.yhms.okhttp3.interfaces.ILoadingView;
 
-import io.reactivex.Observable;
-import io.reactivex.ObservableSource;
 import io.reactivex.ObservableTransformer;
 import io.reactivex.android.schedulers.AndroidSchedulers;
-import io.reactivex.annotations.NonNull;
-import io.reactivex.disposables.Disposable;
-import io.reactivex.functions.Action;
-import io.reactivex.functions.Consumer;
 import io.reactivex.schedulers.Schedulers;
 
 
@@ -42,32 +36,21 @@ public class Transformer {
      * @return 返回Observable
      */
     public static <T> ObservableTransformer<T, T> switchSchedulers(final ILoadingView loadingView) {
-        return new ObservableTransformer<T, T>() {
-            @Override
-            public ObservableSource<T> apply(@NonNull Observable<T> upstream) {
-                return upstream
-                        .subscribeOn(Schedulers.io())
-                        .unsubscribeOn(Schedulers.io())
-                        .doOnSubscribe(new Consumer<Disposable>() {
-                            @Override
-                            public void accept(@NonNull Disposable disposable) throws Exception {
-                                if (loadingView != null) {
-                                    loadingView.showLoadingView();
-                                }
-                            }
-                        })
-                        .subscribeOn(AndroidSchedulers.mainThread())
-                        .observeOn(AndroidSchedulers.mainThread())
-                        .doFinally(new Action() {
-                            @Override
-                            public void run() throws Exception {
-                                if (loadingView != null) {
-                                    loadingView.hideLoadingView();
-                                }
-                            }
-                        });
-            }
-        };
+        return upstream -> upstream
+                .subscribeOn(Schedulers.io())
+                .unsubscribeOn(Schedulers.io())
+                .doOnSubscribe(disposable -> {
+                    if (loadingView != null) {
+                        loadingView.showLoadingView();
+                    }
+                })
+                .subscribeOn(Schedulers.newThread())      // 子线程执行网络操作
+                .observeOn(AndroidSchedulers.mainThread()) // 转回主线程
+                .doFinally(() -> {
+                    if (loadingView != null) {
+                        loadingView.hideLoadingView();
+                    }
+                });
     }
 
 }
