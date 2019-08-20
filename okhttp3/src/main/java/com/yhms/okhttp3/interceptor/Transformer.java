@@ -44,8 +44,8 @@ public class Transformer {
                         loadingView.showLoadingView();
                     }
                 })
-                .subscribeOn(Schedulers.io())     // 尽量避免使用Schedulers.newThread()每次都去创建一个线程，而是去使用Schedulers.io()可以去复用已有的线程，订阅处理在子线程中
-                .observeOn(AndroidSchedulers.mainThread()) // 转回主线程，订阅处理都在ui线程中
+                .subscribeOn(AndroidSchedulers.mainThread())
+                .observeOn(AndroidSchedulers.mainThread())
                 .doFinally(() -> {
                     if (loadingView != null) {
                         loadingView.hideLoadingView();
