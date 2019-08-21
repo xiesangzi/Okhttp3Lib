@@ -45,9 +45,9 @@ public abstract class DownloadObserver extends BaseObserver<ResponseBody> {
     /**
      * 失败回调
      *
-     * @param errorMsg errorMsg
+     * @param e errorMsg
      */
-    protected abstract void onDownloadError(String errorMsg);
+    protected abstract void onDownloadError(ApiException e);
 
 
     /**
@@ -68,8 +68,8 @@ public abstract class DownloadObserver extends BaseObserver<ResponseBody> {
 
 
     @Override
-    public void doOnError(ApiException errorMsg) {
-        DownloadObserver.this.onDownloadError(errorMsg.getMessage());
+    public void doOnError(ApiException e) {
+        DownloadObserver.this.onDownloadError(e);
     }
 
     @Override
