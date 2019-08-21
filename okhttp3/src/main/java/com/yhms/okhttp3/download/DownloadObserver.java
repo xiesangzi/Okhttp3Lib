@@ -27,15 +27,17 @@ import okhttp3.ResponseBody;
 
 public abstract class DownloadObserver extends BaseObserver<ResponseBody> {
 
-    private String fileName;
+    /**文件名+后缀**/
+    private String destFileName;
+    /**文件下载路径**/
     private String destFileDir;
 
-    public DownloadObserver(String fileName) {
-        this.fileName = fileName;
+    public DownloadObserver(String destFileName) {
+        this.destFileName = destFileName;
     }
 
-    public DownloadObserver(String fileName, String destFileDir) {
-        this.fileName = fileName;
+    public DownloadObserver(String destFileName, String destFileDir) {
+        this.destFileName = destFileName;
         this.destFileDir = destFileDir;
     }
 
@@ -45,7 +47,7 @@ public abstract class DownloadObserver extends BaseObserver<ResponseBody> {
      *
      * @param errorMsg errorMsg
      */
-    protected abstract void onError(String errorMsg);
+    protected abstract void onDownloadError(String errorMsg);
 
 
     /**
@@ -62,12 +64,12 @@ public abstract class DownloadObserver extends BaseObserver<ResponseBody> {
      * @param done          是否下载完成
      * @param filePath      文件路径
      */
-    protected abstract void onSuccess(long bytesRead, long contentLength, float progress, boolean done, String filePath);
+    protected abstract void onDownloadSuccess(long bytesRead, long contentLength, float progress, boolean done, String filePath);
 
 
     @Override
     public void doOnError(ApiException errorMsg) {
-        onError(errorMsg);
+        DownloadObserver.this.onDownloadError(errorMsg.getMessage());
     }
 
     @Override
@@ -84,13 +86,13 @@ public abstract class DownloadObserver extends BaseObserver<ResponseBody> {
                 .subscribe(new Observer<ResponseBody>() {
                     @Override
                     public void onSubscribe(Disposable d) {
-                        doOnSubscribe(d);
+                        DownloadObserver.this.doOnSubscribe(d);
                     }
 
                     @Override
                     public void onNext(ResponseBody responseBody) {
                         try {
-                            new DownloadManager().saveFile(responseBody, fileName, destFileDir, new ProgressListener() {
+                            new DownloadManager().saveFile(responseBody, destFileName, destFileDir, new ProgressListener() {
                                 @Override
                                 public void onResponseProgress(final long bytesRead, final long contentLength, final int progress, final boolean done, final String filePath) {
                                     Observable
@@ -100,7 +102,7 @@ public abstract class DownloadObserver extends BaseObserver<ResponseBody> {
                                             .subscribe(new Consumer<Integer>() {
                                                 @Override
                                                 public void accept(@NonNull Integer integer) throws Exception {
-                                                    onSuccess(bytesRead, contentLength, progress, done, filePath);
+                                                    onDownloadSuccess(bytesRead, contentLength, progress, done, filePath);
                                                 }
                                             });
                                 }
@@ -115,7 +117,7 @@ public abstract class DownloadObserver extends BaseObserver<ResponseBody> {
                                         @Override
                                         public void accept(IOException s) throws Exception {
                                             ApiException exception = new ApiException(s, ApiException.ERROR.PARSE_ERROR);
-                                            doOnError(exception);
+                                            DownloadObserver.this.doOnError(exception);
                                         }
                                     });
                         }
@@ -123,13 +125,13 @@ public abstract class DownloadObserver extends BaseObserver<ResponseBody> {
 
                     @Override
                     public void onError(Throwable e) {
-                        ApiException exception = new ApiException(e.getCause(), ApiException.ERROR.PARSE_ERROR);
-                        doOnError(exception);
+                        ApiException exception = new ApiException(e, ApiException.ERROR.PARSE_ERROR);
+                        DownloadObserver.this.doOnError(exception);
                     }
 
                     @Override
                     public void onComplete() {
-                        doOnCompleted();
+                        DownloadObserver.this.doOnCompleted();
                     }
                 });
 
