@@ -84,7 +84,7 @@ public abstract class DownloadObserver extends BaseObserver<ResponseBody> {
                 .subscribe(new Observer<ResponseBody>() {
                     @Override
                     public void onSubscribe(Disposable d) {
-
+                        doOnSubscribe(d);
                     }
 
                     @Override
@@ -123,12 +123,13 @@ public abstract class DownloadObserver extends BaseObserver<ResponseBody> {
 
                     @Override
                     public void onError(Throwable e) {
-
+                        ApiException exception = new ApiException(e.getCause(), ApiException.ERROR.PARSE_ERROR);
+                        doOnError(exception);
                     }
 
                     @Override
                     public void onComplete() {
-
+                        doOnCompleted();
                     }
                 });
 
